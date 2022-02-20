@@ -17,9 +17,10 @@
 
 from __future__ import unicode_literals
 
+import urllib
+
 import requests
 import logging
-import urlparse
 import socket
 import traceback
 import lxml
@@ -180,7 +181,7 @@ class ChromecastRendererFactory(object):
 
     @classmethod
     def from_xml(cls, url, xml):
-        url_object = urlparse.urlparse(url)
+        url_object = urllib.parse(url)
         ip, port = url_object.netloc.split(':')
         try:
             xml_root = lxml.etree.fromstring(xml)
@@ -202,16 +203,16 @@ class ChromecastRendererFactory(object):
                     return None
 
                 return ChromecastRenderer(
-                    name=unicode(device_friendlyname.text),
-                    ip=unicode(ip),
+                    name=device_friendlyname.text,
+                    ip=ip,
                     port=None,
-                    udn=unicode(device_udn.text),
-                    model_name=unicode(device_modelname.text),
+                    udn=device_udn.text,
+                    model_name=device_modelname.text,
                     model_number=None,
                     model_description=None,
-                    manufacturer=unicode(device_manufacturer.text),
+                    manufacturer=device_manufacturer.text,
                 )
-        except:
+        except pulseaudio_dlna:
             logger.error('No valid XML returned from {url}.'.format(url=url))
             return None
 

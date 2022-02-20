@@ -58,7 +58,7 @@ SHARE_PATTERN = """#############################################################
 """
 
 
-class IPDetector():
+class IPDetector:
 
     TIMEOUT = 5
 
@@ -69,7 +69,8 @@ class IPDetector():
         self.public_ip = self._get_public_ip()
         return self.public_ip is not None
 
-    def _get_public_ip(self):
+    @staticmethod
+    def _get_public_ip():
         response = requests.get('http://ifconfig.lancode.de')
         if response.status_code == 200:
             data = json.loads(response.content)
@@ -77,7 +78,7 @@ class IPDetector():
         return None
 
 
-class DLNADiscover():
+class DLNADiscover:
 
     PLUGINS = [
         pulseaudio_dlna.plugins.dlna.DLNAPlugin(),

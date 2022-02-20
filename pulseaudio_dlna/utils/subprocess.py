@@ -44,7 +44,8 @@ class Subprocess(subprocess.Popen):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             bufsize=1)
 
-    def demote(self, uid, gid):
+    @staticmethod
+    def demote(uid, gid):
         def fn_uid_gid():
             os.setgid(gid)
             os.setuid(uid)
@@ -74,7 +75,8 @@ class GobjectMainLoopMixin(object):
             GObject.io_add_watch(
                 pipe, GObject.IO_IN | GObject.IO_PRI, self._on_new_data)
 
-    def _on_new_data(self, fd, condition):
+    @staticmethod
+    def _on_new_data(fd, condition):
         line = fd.readline()
         sys.stdout.write(line)
         sys.stdout.flush()
@@ -87,10 +89,11 @@ class ThreadedMixIn(object):
         self.init_thread(self.stdout)
         self.init_thread(self.stderr)
 
-    def init_thread(self, pipe):
-        def read_all(pipe):
-            with pipe:
-                for line in iter(pipe.readline, ''):
+    @staticmethod
+    def init_thread(pipe):
+        def read_all(_pipe):
+            with _pipe:
+                for line in iter(_pipe.readline, ''):
                     sys.stdout.write(line)
                     sys.stdout.flush()
 

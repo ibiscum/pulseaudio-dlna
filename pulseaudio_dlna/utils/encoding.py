@@ -34,10 +34,10 @@ class NotBytesException(Exception):
         )
 
 
-def decode_default(bytes):
-    if type(bytes) is not str:
-        raise NotBytesException(bytes)
-    guess = chardet.detect(bytes)
+def decode_default(_bytes):
+    if type(_bytes) is not str:
+        raise NotBytesException(_bytes)
+    guess = chardet.detect(_bytes)
     encodings = {
         'sys.stdout.encoding': sys.stdout.encoding,
         'locale.getpreferredencoding': locale.getpreferredencoding(),
@@ -48,11 +48,11 @@ def decode_default(bytes):
     for encoding in encodings.values():
         if encoding and encoding != 'ascii':
             try:
-                return bytes.decode(encoding)
+                return _bytes.decode(encoding)
             except UnicodeDecodeError:
                 continue
     try:
-        return bytes.decode('ascii', errors='replace')
+        return _bytes.decode('ascii', errors='replace')
     except UnicodeDecodeError:
         logger.error(
             'Decoding failed using the following encodings: "{}"'.format(
@@ -62,11 +62,11 @@ def decode_default(bytes):
         return 'Unknown'
 
 
-def _bytes2hex(bytes, seperator=':'):
-    if type(bytes) is not str:
-        raise NotBytesException(bytes)
-    return seperator.join('{:02x}'.format(ord(b)) for b in bytes)
+def _bytes2hex(_bytes, seperator=':'):
+    if type(_bytes) is not str:
+        raise NotBytesException(_bytes)
+    return seperator.join('{:02x}'.format(ord(b)) for b in _bytes)
 
 
-def _hex2bytes(hex, seperator=':'):
-    return b''.join(chr(int(h, 16)) for h in hex.split(seperator))
+def _hex2bytes(_hex, seperator=':'):
+    return b''.join(chr(int(h, 16)) for h in _hex.split(seperator))

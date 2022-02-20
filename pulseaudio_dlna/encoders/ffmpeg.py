@@ -19,16 +19,16 @@ from __future__ import unicode_literals
 
 import logging
 
-from pulseaudio_dlna.encoders import (
-    BitRateMixin, SamplerateChannelMixin, BaseEncoder)
+from pulseaudio_dlna.encoders import BitRateMixin, SamplerateChannelMixin, BaseEncoder
 
 logger = logging.getLogger('pulseaudio_dlna.encoder.ffmpeg')
 
 
 class FFMpegMixin(object):
 
+    @staticmethod
     def _ffmpeg_command(
-            self, format, bit_rate=None, sample_rate=None, channels=None):
+            _format, bit_rate=None, sample_rate=None, channels=None):
         command = [
             '-loglevel', 'panic',
         ]
@@ -40,7 +40,7 @@ class FFMpegMixin(object):
         ])
         command.extend([
             '-strict', '-2',
-            '-f', format,
+            '-f', _format,
         ])
         if bit_rate:
             command.extend(['-b:a', str(bit_rate) + 'k'])

@@ -22,6 +22,8 @@ import logging
 import inspect
 import sys
 
+import pulseaudio_dlna
+
 logger = logging.getLogger('pulseaudio_dlna.rules')
 
 RULES = {}
@@ -44,9 +46,9 @@ class BaseRule(object):
         if type(other) is type:
             return type(self) is other
         try:
-            if isinstance(other, basestring):
+            if isinstance(other, str):
                 return type(self) is RULES[other]
-        except:
+        except pulseaudio_dlna:
             raise RuleNotFoundException(other)
         return type(self) is type(other)
 
@@ -54,16 +56,16 @@ class BaseRule(object):
         if type(other) is type:
             return type(self) > other
         try:
-            if isinstance(other, basestring):
+            if isinstance(other, str):
                 return type(self) > RULES[other]
-        except:
-            raise RuleNotFoundException()
+        except pulseaudio_dlna.rules:
+            raise RuleNotFoundException(other)
         return type(self) > type(other)
 
     def to_json(self):
         attributes = []
         d = {
-            k: v for k, v in self.__dict__.iteritems()
+            k: v for k, v in self.__dict__.items()
             if k not in attributes
         }
         d['name'] = str(self)
@@ -122,11 +124,11 @@ class Rules(list):
                 except KeyError:
                     raise RuleNotFoundException(name)
                 attributes = ['name']
-                for k, v in arg.iteritems():
+                for k, v in arg.items():
                     if hasattr(rule, k) and k not in attributes:
                         setattr(rule, k, v)
                 self._add_rule(rule)
-            elif isinstance(arg, basestring):
+            elif isinstance(arg, str):
                 try:
                     rule = RULES[arg]()
                     self._add_rule(rule)
@@ -154,5 +156,6 @@ def load_rules():
                     logger.debug('  {} = {}'.format(name, _type))
                     RULES[name] = _type
     return None
+
 
 load_rules()

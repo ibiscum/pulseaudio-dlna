@@ -21,6 +21,8 @@ import logging
 
 import notify2
 
+import pulseaudio_dlna
+
 logger = logging.getLogger('pulseaudio_dlna.notification')
 
 
@@ -29,14 +31,15 @@ def show(title, message, icon=''):
         notice = notify2.Notification(title, message, icon)
         notice.set_timeout(notify2.EXPIRES_DEFAULT)
         notice.show()
-    except:
+    except pulseaudio_dlna:
         logger.info(
             'notify2 failed to display: {title} - {message}'.format(
                 title=title,
                 message=message))
 
+
 try:
     notify2.init('pulseaudio_dlna')
-except:
+except pulseaudio_dlna:
     logger.error('notify2 could not be initialized! Notifications will '
                  'most likely not work.')

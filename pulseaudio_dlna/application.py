@@ -14,17 +14,18 @@
 
 # You should have received a copy of the GNU General Public License
 # along with pulseaudio-dlna.  If not, see <http://www.gnu.org/licenses/>.
+""" Main application """
 
 from __future__ import unicode_literals
 
 import multiprocessing
 import signal
-import setproctitle
-import logging
+import time
 import sys
 import json
 import os
-import time
+import logging
+import setproctitle
 
 import pulseaudio_dlna
 import pulseaudio_dlna.holder
@@ -41,16 +42,18 @@ import pulseaudio_dlna.pulseaudio
 import pulseaudio_dlna.utils.network
 import pulseaudio_dlna.rules
 import pulseaudio_dlna.workarounds
+import pulseaudio_dlna.codecs
+import pulseaudio_dlna.plugins.renderer
 
 logger = logging.getLogger('pulseaudio_dlna.application')
 
 
-class Application(object):
+class Application:
+    """ Application class """
 
     ENCODING = 'utf-8'
     DEVICE_CONFIG_PATHS = [
-        os.path.expanduser('~/.local/share/pulseaudio-dlna'),
-        '/etc/pulseaudio-dlna',
+        os.path.expanduser('~/.local/share/pulseaudio-dlna'), '/etc/pulseaudio-dlna',
     ]
     DEVICE_CONFIG = 'devices.json'
     PLUGINS = [
@@ -63,7 +66,8 @@ class Application(object):
         self.processes = []
         self.is_terminating = False
 
-    def shutdown(self, signal_number=None, frame=None):
+    def shutdown(self):
+        """ Shutdown application """
         if not self.is_terminating:
             print('Application is shutting down ...')
             self.is_terminating = True
@@ -75,7 +79,7 @@ class Application(object):
                 # This unblocks the main thread and ensures that the process
                 # is receiving signals again.
                 os.kill(process.pid, signal.SIGINT)
-                # SIGTERM is the acutal one which is terminating the process
+                # SIGTERM is the actual one which is terminating the process
                 os.kill(process.pid, signal.SIGTERM)
 
             start_time = time.time()
@@ -97,14 +101,15 @@ class Application(object):
             sys.exit(0)
 
     def run_process(self, target, *args, **kwargs):
+        """ Run application process """
         process = multiprocessing.Process(
             target=target, args=args, kwargs=kwargs)
         self.processes.append(process)
         process.start()
 
     def run(self, options):
-
-        logger.info('Using version: {}'.format(pulseaudio_dlna.__version__))
+        """ Run application """
+        logger.info('Using version: %s', pulseaudio_dlna.__version__)
 
         if not options['--host']:
             host = None
@@ -115,8 +120,7 @@ class Application(object):
         pulseaudio_dlna.streamserver.StreamServer.HOST = host
         pulseaudio_dlna.streamserver.StreamServer.PORT = port
 
-        logger.info('Binding to {host}:{port}'.format(
-            host=host or '*', port=port))
+        logger.info('Binding to %s:%s', host, port)
 
         if options['--disable-workarounds']:
             pulseaudio_dlna.workarounds.BaseWorkaround.ENABLED = False
@@ -131,30 +135,24 @@ class Application(object):
         if options['--chunk-size']:
             chunk_size = int(options['--chunk-size'])
             if chunk_size > 0:
-                pulseaudio_dlna.streamserver.ProcessThread.CHUNK_SIZE = \
-                    chunk_size
+                pulseaudio_dlna.streamserver.ProcessThread.CHUNK_SIZE = chunk_size
 
         if options['--ssdp-ttl']:
             ssdp_ttl = int(options['--ssdp-ttl'])
-            pulseaudio_dlna.plugins.dlna.ssdp.discover.\
-                SSDPDiscover.SSDP_TTL = ssdp_ttl
-            pulseaudio_dlna.plugins.dlna.ssdp.listener.\
-                SSDPListener.SSDP_TTL = ssdp_ttl
+            pulseaudio_dlna.plugins.dlna.ssdp.discover.SSDPDiscover.SSDP_TTL = ssdp_ttl
+            pulseaudio_dlna.plugins.dlna.ssdp.listener.SSDPListener.SSDP_TTL = ssdp_ttl
 
         if options['--ssdp-mx']:
             ssdp_mx = int(options['--ssdp-mx'])
-            pulseaudio_dlna.plugins.dlna.ssdp.discover.\
-                SSDPDiscover.SSDP_MX = ssdp_mx
+            pulseaudio_dlna.plugins.dlna.ssdp.discover.SSDPDiscover.SSDP_MX = ssdp_mx
 
         if options['--ssdp-amount']:
             ssdp_amount = int(options['--ssdp-amount'])
-            pulseaudio_dlna.plugins.dlna.ssdp.discover.\
-                SSDPDiscover.SSDP_AMOUNT = ssdp_amount
+            pulseaudio_dlna.plugins.dlna.ssdp.discover.SSDPDiscover.SSDP_AMOUNT = ssdp_amount
 
         msearch_port = options.get('--msearch-port', None)
         if msearch_port != 'random':
-            pulseaudio_dlna.plugins.dlna.ssdp.discover.\
-                SSDPDiscover.MSEARCH_PORT = int(msearch_port)
+            pulseaudio_dlna.plugins.dlna.ssdp.discover.SSDPDiscover.MSEARCH_PORT = int(msearch_port)
 
         if options['--create-device-config']:
             self.create_device_config()
@@ -170,22 +168,20 @@ class Application(object):
 
         if options['--encoder-backend']:
             try:
-                pulseaudio_dlna.codecs.set_backend(
-                    options['--encoder-backend'])
-            except pulseaudio_dlna.codecs.UnknownBackendException as e:
-                logger.error(e)
+                pulseaudio_dlna.codecs.set_backend(options['--encoder-backend'])
+            except pulseaudio_dlna.codecs.UnknownBackendException as e_v:
+                logger.error(e_v)
                 sys.exit(1)
 
         if options['--encoder']:
-            logger.warning(
-                'The option "--encoder" is deprecated. '
-                'Please use "--codec" instead.')
+            logger.warning('The option "--encoder" is deprecated. Please use "--codec" instead.')
+
         codecs = (options['--encoder'] or options['--codec'])
         if codecs:
             try:
                 pulseaudio_dlna.codecs.set_codecs(codecs.split(','))
-            except pulseaudio_dlna.codecs.UnknownCodecException as e:
-                logger.error(e)
+            except pulseaudio_dlna.codecs.UnknownCodecException as e_v:
+                logger.error(e_v)
                 sys.exit(1)
 
         bit_rate = options['--bit-rate']
@@ -193,15 +189,15 @@ class Application(object):
             try:
                 pulseaudio_dlna.encoders.set_bit_rate(bit_rate)
             except (pulseaudio_dlna.encoders.InvalidBitrateException,
-                    pulseaudio_dlna.encoders.UnsupportedBitrateException) as e:
-                logger.error(e)
+                    pulseaudio_dlna.encoders.UnsupportedBitrateException) as e_v:
+                logger.error(e_v)
                 sys.exit(1)
 
         cover_mode = options['--cover-mode']
         try:
             pulseaudio_dlna.covermodes.validate(cover_mode)
-        except pulseaudio_dlna.covermodes.UnknownCoverModeException as e:
-            logger.error(e)
+        except pulseaudio_dlna.covermodes.UnknownCoverModeException as e_v:
+            logger.error(e_v)
             sys.exit(1)
 
         logger.info('Encoder settings:')
@@ -210,20 +206,19 @@ class Application(object):
         for _type in pulseaudio_dlna.encoders.ENCODERS:
             encoder = _type()
             encoder.validate()
-            logger.info('  {}'.format(encoder))
+            logger.info('  %s', encoder)
 
         logger.info('Codec settings:')
-        for identifier, _type in pulseaudio_dlna.codecs.CODECS.iteritems():
+        for _type in pulseaudio_dlna.codecs.CODECS.items():
             codec = _type()
-            logger.info('  {}'.format(codec))
+            logger.info('  %s', codec)
 
         fake_http_content_length = False
         if options['--fake-http-content-length']:
             fake_http_content_length = True
         if options['--fake-http10-content-length']:
-            logger.warning(
-                'The option "--fake-http10-content-length" is deprecated. '
-                'Please use "--fake-http-content-length" instead.')
+            logger.warning('The option "--fake-http10-content-length" is deprecated. '
+                           'Please use "--fake-http-content-length" instead.')
             fake_http_content_length = True
 
         disable_switchback = False
@@ -242,7 +237,10 @@ class Application(object):
         stream_queue = multiprocessing.Queue()
 
         stream_server = pulseaudio_dlna.streamserver.ThreadedStreamServer(
-            host, port, pulse_queue, stream_queue,
+            host,
+            port,
+            pulse_queue,
+            stream_queue,
             fake_http_content_length=fake_http_content_length,
             proc_title='stream_server',
         )
@@ -292,6 +290,7 @@ class Application(object):
         signal.pause()
 
     def create_device_config(self, update=False):
+        """ Create device config file """
         logger.info('Starting discovery ...')
         holder = pulseaudio_dlna.holder.Holder(plugins=self.PLUGINS)
         holder.search(ttl=5)
@@ -300,12 +299,11 @@ class Application(object):
         def device_filter(obj):
             if hasattr(obj, 'to_json'):
                 return obj.to_json()
-            else:
-                return obj.__dict__
+            return obj.__dict__
 
         def obj_to_dict(obj):
-            json_text = json.dumps(obj, default=device_filter)
-            return json.loads(json_text)
+            _json_text = json.dumps(obj, default=device_filter)
+            return json.loads(_json_text)
 
         if update:
             existing_config = self.read_device_config()
@@ -313,10 +311,8 @@ class Application(object):
                 new_config = obj_to_dict(holder.devices)
                 new_config.update(existing_config)
             else:
-                logger.error(
-                    'Your device config could not be found at any of the '
-                    'locations "{}"'.format(
-                        ','.join(self.DEVICE_CONFIG_PATHS)))
+                logger.error('Your device config could not be found at any of the locations "%s"',
+                             self.DEVICE_CONFIG_PATHS)
                 sys.exit(1)
         else:
             new_config = obj_to_dict(holder.devices)
@@ -330,43 +326,35 @@ class Application(object):
                 except (OSError, IOError):
                     continue
             try:
-                with open(config_file, 'w') as h:
-                    h.write(json_text.encode(self.ENCODING))
+                with open(config_file, 'w') as h_v:
+                    h_v.write(json_text.encode(self.ENCODING))
                     logger.info('Found the following devices:')
                     for device in holder.devices.values():
-                        logger.info('{name} ({flavour})'.format(
-                            name=device.name, flavour=device.flavour))
+                        logger.info('%s (%s)', name=device.name, flavour=device.flavour)
                         for codec in device.codecs:
-                            logger.info('  - {}'.format(
-                                codec.__class__.__name__))
-                    logger.info(
-                        'Your config was successfully written to "{}"'.format(
-                            config_file))
+                            logger.info('  - %s', codec.__class__.__name__)
+                    logger.info('Your config was successfully written to "%s"', config_file)
                     return
             except (OSError, IOError):
                 continue
 
-        logger.error(
-            'Your device config could not be written to any of the '
-            'locations "{}"'.format(','.join(self.DEVICE_CONFIG_PATHS)))
+        logger.error('Your device config could not be written to any of the locations "%s"',
+                     self.DEVICE_CONFIG_PATHS)
 
     def read_device_config(self):
+        """ Read the config file """
         for config_path in self.DEVICE_CONFIG_PATHS:
             config_file = os.path.join(config_path, self.DEVICE_CONFIG)
-            if os.path.isfile(config_file) and \
-               os.access(config_file, os.R_OK):
-                with open(config_file, 'r') as h:
-                    json_text = h.read().decode(self.ENCODING)
-                    logger.debug('Device configuration:\n{}'.format(json_text))
+            if os.path.isfile(config_file) and os.access(config_file, os.R_OK):
+                with open(config_file, 'r') as c_f:
+                    json_text = c_f.read().decode(self.ENCODING)
+                    logger.debug('Device configuration:\n%s', config_file)
                     json_text = json_text.replace('\n', '')
                     try:
                         device_config = json.loads(json_text)
-                        logger.info(
-                            'Loaded device config "{}"'.format(config_file))
+                        logger.info('Loaded device config "%s"', config_file)
                         return device_config
                     except ValueError:
-                        logger.error(
-                            'Unable to parse "{}"! '
-                            'Check the file for syntax errors ...'.format(
-                                config_file))
+                        logger.error('Unable to parse "%s"! Check the file for syntax errors...',
+                                     config_file)
         return None

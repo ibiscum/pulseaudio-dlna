@@ -19,8 +19,8 @@ from __future__ import unicode_literals
 
 from gi.repository import GObject
 
-import dbus
-import dbus.mainloop.glib
+import dasbus
+# import dbus.mainloop.glib
 import logging
 import os
 import sys
@@ -54,7 +54,7 @@ def missing_env_vars(environment):
 
 class Daemon(object):
     def __init__(self):
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        # dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         setproctitle.setproctitle('pulseaudio-daemon')
         self.mainloop = GObject.MainLoop()
         self.processes = []
@@ -67,7 +67,8 @@ class Daemon(object):
             ('NameOwnerChanged', 'org.freedesktop.DBus.{}',
                 self.on_name_owner_changed),
         )
-        self.bus = dbus.SystemBus()
+        # self.bus = dbus.SystemBus()
+        self.bus = dasbus.SystemBus()
         self.core = self.bus.get_object('org.freedesktop.DBus', '/')
         for sig_name, interface, sig_handler in signals:
             self.bus.add_signal_receiver(sig_handler, sig_name)
@@ -222,7 +223,8 @@ class PulseAudioProcess(psutil.Process):
         except psutil.NoSuchProcess:
             logger.info('Process {} has exited.'.format(pid))
 
-    def _get_uid_name(self, uid):
+    @staticmethod
+    def _get_uid_name(uid):
         try:
             return pwd.getpwuid(uid).pw_name
         except KeyError:

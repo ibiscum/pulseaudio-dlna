@@ -17,11 +17,8 @@
 
 from __future__ import unicode_literals
 
-from gi.repository import GObject
-
 import re
 import subprocess
-import setproctitle
 import logging
 import socket
 import select
@@ -31,11 +28,14 @@ import urllib
 import json
 import os
 import signal
-import pkg_resources
-import BaseHTTPServer
-import SocketServer
-import Queue
 import threading
+import pkg_resources
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import socketserver
+import queue
+import setproctitle
+
+from gi.repository import GObject
 
 import pulseaudio_dlna.encoders
 import pulseaudio_dlna.codecs
@@ -49,7 +49,7 @@ PROTOCOL_VERSION_V10 = 'HTTP/1.0'
 PROTOCOL_VERSION_V11 = 'HTTP/1.1'
 
 
-class ProcessQueue(Queue.Queue):
+class ProcessQueue(queue.Queue):
 
     def data(self):
         data = self.get()
@@ -402,14 +402,15 @@ class StreamRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         pass
 
 
-class StreamServer(SocketServer.TCPServer):
+class StreamServer(socketserver.TCPServer):
 
     HOST = None
     PORT = None
 
-    def __init__(
-            self, ip, port, pulse_queue, stream_queue,
-            fake_http_content_length=False, proc_title=None, *args):
+    def __init__(self, ip, port, pulse_queue, stream_queue, server_address: tuple[str, int],
+                 RequestHandlerClass: Callable[..., BaseRequestHandler], fake_http_content_length=False,
+                 proc_title=None, *args):
+        super().__init__(server_address, RequestHandlerClass)
         self.ip = ip or self.HOST
         self.port = port or self.PORT
         self.pulse_queue = pulse_queue
@@ -423,7 +424,7 @@ class StreamServer(SocketServer.TCPServer):
         self.allow_reuse_address = True
         self.daemon_threads = True
         try:
-            SocketServer.TCPServer.__init__(
+            socketserver.TCPServer.__init__(
                 self, (self.ip or '', self.port), StreamRequestHandler)
         except socket.error:
             logger.critical(
@@ -486,5 +487,5 @@ class GobjectMainLoopMixin:
 
 
 class ThreadedStreamServer(
-        GobjectMainLoopMixin, SocketServer.ThreadingMixIn, StreamServer):
+        GobjectMainLoopMixin, socketserver.ThreadingMixIn, StreamServer):
     pass

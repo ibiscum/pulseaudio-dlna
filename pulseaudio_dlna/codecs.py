@@ -25,6 +25,7 @@ import sys
 
 import pulseaudio_dlna.encoders
 import pulseaudio_dlna.rules
+import pulseaudio_dlna.recorders
 
 logger = logging.getLogger('pulseaudio_dlna.codecs')
 
@@ -67,7 +68,7 @@ def set_backend(backend):
 def set_codecs(identifiers):
     step = 3
     priority = (len(CODECS) + 1) * step
-    for identifier, _type in CODECS.iteritems():
+    for identifier, _type in CODECS.items():
         _type.ENABLED = False
         _type.PRIORITY = 0
     for identifier in identifiers:
@@ -81,7 +82,7 @@ def set_codecs(identifiers):
 
 def enabled_codecs():
     codecs = []
-    for identifier, _type in CODECS.iteritems():
+    for identifier, _type in CODECS.items():
         if _type.ENABLED:
             codecs.append(_type())
     return codecs
@@ -89,13 +90,14 @@ def enabled_codecs():
 
 @functools.total_ordering
 class BaseCodec(object):
-
+    SUPPORTED_MIME_TYPES = None
     ENABLED = True
     IDENTIFIER = None
     BACKEND = 'generic'
     PRIORITY = None
 
     def __init__(self):
+        self.ENCODERS = None
         self.mime_type = None
         self.suffix = None
         self.rules = pulseaudio_dlna.rules.Rules()
@@ -152,23 +154,22 @@ class BaseCodec(object):
         return type(self) is type(other)
 
     def __str__(self, detailed=False):
-        return '<{} enabled="{}" priority="{}" mime_type="{}" ' \
-               'backend="{}">{}{}'.format(
-                   self.__class__.__name__,
-                   self.enabled,
-                   self.priority,
-                   self.specific_mime_type,
-                   self.BACKEND,
-                   ('\n' if len(self.rules) > 0 else '') + '\n'.join(
-                       ['    - ' + str(rule) for rule in self.rules]
-                   ) if detailed else '',
-                   '\n    ' + str(self.encoder) if detailed else '',
-               )
+        return '<{} enabled="{}" priority="{}" mime_type="{}" backend="{}">{}{}'.format(
+            self.__class__.__name__,
+            self.enabled,
+            self.priority,
+            self.specific_mime_type,
+            self.BACKEND,
+            ('\n' if len(self.rules) > 0 else '') + '\n'.join(
+                ['    - ' + str(rule) for rule in self.rules]
+            ) if detailed else '',
+            '\n    ' + str(self.encoder) if detailed else '',
+        )
 
     def to_json(self):
         attributes = ['priority', 'suffix', 'mime_type']
         d = {
-            k: v for k, v in self.__dict__.iteritems()
+            k: v for k, v in self.__dict__.items()
             if k not in attributes
         }
         d['mime_type'] = self.specific_mime_type
@@ -191,9 +192,11 @@ class BitRateMixin(object):
     def __gt__(self, other):
         return type(self) is type(other) and self.bit_rate > other.bit_rate
 
+    def encoder_type(self, bit_rate):
+        pass
+
 
 class Mp3Codec(BitRateMixin, BaseCodec):
-
     SUPPORTED_MIME_TYPES = ['audio/mpeg', 'audio/mp3']
     IDENTIFIER = 'mp3'
     ENCODERS = {
@@ -211,7 +214,6 @@ class Mp3Codec(BitRateMixin, BaseCodec):
 
 
 class WavCodec(BaseCodec):
-
     SUPPORTED_MIME_TYPES = ['audio/wav', 'audio/x-wav']
     IDENTIFIER = 'wav'
     ENCODERS = {
@@ -229,7 +231,6 @@ class WavCodec(BaseCodec):
 
 
 class L16Codec(BaseCodec):
-
     SUPPORTED_MIME_TYPES = ['audio/l16']
     IDENTIFIER = 'l16'
     ENCODERS = {
@@ -251,7 +252,7 @@ class L16Codec(BaseCodec):
             match = re.match(
                 '(.*?)(?P<mime_type>.*?);'
                 '(.*?)rate=(?P<sample_rate>.*?);'
-                '(.*?)channels=(?P<channels>\d)', mime_string)
+                '(.*?)channels=(?P<channels>)', mime_string)
             if match:
                 self.mime_type = match.group('mime_type')
                 self.sample_rate = int(match.group('sample_rate'))
@@ -271,17 +272,16 @@ class L16Codec(BaseCodec):
 
     def __eq__(self, other):
         return type(self) is type(other) and (
-            self.sample_rate == other.sample_rate and
-            self.channels == other.channels)
+                self.sample_rate == other.sample_rate and
+                self.channels == other.channels)
 
     def __gt__(self, other):
         return type(self) is type(other) and (
-            self.sample_rate > other.sample_rate and
-            self.channels > other.channels)
+                self.sample_rate > other.sample_rate and
+                self.channels > other.channels)
 
 
 class AacCodec(BitRateMixin, BaseCodec):
-
     SUPPORTED_MIME_TYPES = ['audio/aac', 'audio/x-aac']
     IDENTIFIER = 'aac'
     ENCODERS = {
@@ -299,7 +299,6 @@ class AacCodec(BitRateMixin, BaseCodec):
 
 
 class OggCodec(BitRateMixin, BaseCodec):
-
     SUPPORTED_MIME_TYPES = ['audio/ogg', 'audio/x-ogg', 'application/ogg']
     IDENTIFIER = 'ogg'
     ENCODERS = {
@@ -318,7 +317,6 @@ class OggCodec(BitRateMixin, BaseCodec):
 
 
 class FlacCodec(BaseCodec):
-
     SUPPORTED_MIME_TYPES = ['audio/flac', 'audio/x-flac']
     IDENTIFIER = 'flac'
     ENCODERS = {
@@ -336,7 +334,6 @@ class FlacCodec(BaseCodec):
 
 
 class OpusCodec(BitRateMixin, BaseCodec):
-
     SUPPORTED_MIME_TYPES = ['audio/opus', 'audio/x-opus']
     IDENTIFIER = 'opus'
     ENCODERS = {
@@ -362,5 +359,6 @@ def load_codecs():
                     logger.debug('  {} = {}'.format(_type.IDENTIFIER, _type))
                     CODECS[_type.IDENTIFIER] = _type
     return None
+
 
 load_codecs()

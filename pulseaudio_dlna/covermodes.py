@@ -22,9 +22,9 @@ import inspect
 import socket
 import platform
 import logging
+import pulseaudio_dlna
 
 logger = logging.getLogger('pulseaudio_dlna.covermodes')
-
 
 MODES = {}
 
@@ -43,7 +43,6 @@ def validate(cover_mode):
 
 
 class BaseCoverMode(object):
-
     IDENTIFIER = None
 
     def __init__(self):
@@ -70,24 +69,21 @@ class BaseCoverMode(object):
 
 
 class DisabledCoverMode(BaseCoverMode):
-
     IDENTIFIER = 'disabled'
 
 
 class DefaultCoverMode(BaseCoverMode):
-
     IDENTIFIER = 'default'
 
     @property
     def thumb(self):
         try:
             return self.bridge.device.get_image_url('default.png')
-        except:
+        except pulseaudio_dlna:
             return None
 
 
 class DistributionCoverMode(BaseCoverMode):
-
     IDENTIFIER = 'distribution'
 
     @property
@@ -111,12 +107,11 @@ class DistributionCoverMode(BaseCoverMode):
         try:
             return self.bridge.device.get_image_url(
                 'distribution-{}.png'.format(dist_icon))
-        except:
+        except pulseaudio_dlna:
             return None
 
 
 class ApplicationCoverMode(BaseCoverMode):
-
     IDENTIFIER = 'application'
 
     @property
@@ -124,7 +119,7 @@ class ApplicationCoverMode(BaseCoverMode):
         try:
             return self.bridge.device.get_sys_icon_url(
                 self.bridge.sink.primary_application_name)
-        except:
+        except pulseaudio_dlna:
             return None
 
 
@@ -135,5 +130,6 @@ def load_modes():
                 if _type is not BaseCoverMode:
                     MODES[_type.IDENTIFIER] = _type
     return None
+
 
 load_modes()

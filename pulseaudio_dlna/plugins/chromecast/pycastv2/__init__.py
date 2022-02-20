@@ -118,7 +118,7 @@ class ChannelController(object):
                     app_id=self.app_id))
 
 
-class ChromecastController():
+class ChromecastController:
 
     APP_BACKDROP = 'E8C28D3C'
     WAIT_INTERVAL = 0.1

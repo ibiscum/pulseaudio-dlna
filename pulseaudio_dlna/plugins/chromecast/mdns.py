@@ -31,13 +31,13 @@ class MDNSHandler(object):
     def __init__(self, server):
         self.server = server
 
-    def add_service(self, zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
+    def add_service(self, _zeroconf, _type, name):
+        info = _zeroconf.get_service_info(_type, name)
         if self.server.cb_on_device_added:
             self.server.cb_on_device_added(info)
 
-    def remove_service(self, zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
+    def remove_service(self, _zeroconf, _type, name):
+        info = _zeroconf.get_service_info(_type, name)
         if self.server.cb_on_device_removed:
             self.server.cb_on_device_removed(info)
 
@@ -48,6 +48,9 @@ class MDNSListener(object):
             self, domain,
             host=None,
             cb_on_device_added=None, cb_on_device_removed=None):
+        self.__mainloop = None
+        self.__running = None
+        self.zeroconf = None
         self.domain = domain
         self.host = host
         self.cb_on_device_added = cb_on_device_added

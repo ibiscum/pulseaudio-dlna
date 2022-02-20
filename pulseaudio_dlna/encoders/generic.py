@@ -19,8 +19,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from pulseaudio_dlna.encoders import (
-    BitRateMixin, SamplerateChannelMixin, BaseEncoder)
+from pulseaudio_dlna.encoders import BitRateMixin, SamplerateChannelMixin, BaseEncoder
 
 logger = logging.getLogger('pulseaudio_dlna.encoder.generic')
 

@@ -15,34 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with pulseaudio-dlna.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-Usage:
-    pulseaudio-dlna [--host <host>] [--port <port>][--encoder <encoders> | --codec <codec>] [--bit-rate=<rate>]
-                    [--encoder-backend <encoder-backend>]
-                    [--filter-device=<filter-device>]
-                    [--renderer-urls <urls>]
-                    [--request-timeout <timeout>]
-                    [--chunk-size <chunk-size>]
-                    [--msearch-port=<msearch-port>] [--ssdp-mx <ssdp-mx>] [--ssdp-ttl <ssdp-ttl>] [--ssdp-amount <ssdp-amount>]
-                    [--cover-mode <mode>]
-                    [--auto-reconnect]
-                    [--debug]
-                    [--fake-http10-content-length] [--fake-http-content-length]
-                    [--disable-switchback] [--disable-ssdp-listener] [--disable-device-stop] [--disable-workarounds] [--disable-mimetype-check]
-    pulseaudio-dlna [--host <host>] [--create-device-config] [--update-device-config]
-                    [--msearch-port=<msearch-port>] [--ssdp-mx <ssdp-mx>] [--ssdp-ttl <ssdp-ttl>] [--ssdp-amount <ssdp-amount>]
-    pulseaudio-dlna [-h | --help | --version]
+"""Usage: pulseaudio-dlna [--host <host>] [--port <port>][--encoder <encoders> | --codec <codec>] [--bit-rate=<rate>]
+[--encoder-backend <encoder-backend>] [--filter-device=<filter-device>] [--renderer-urls <urls>] [--request-timeout
+<timeout>] [--chunk-size <chunk-size>] [--msearch-port=<msearch-port>] [--ssdp-mx <ssdp-mx>] [--ssdp-ttl <ssdp-ttl>]
+[--ssdp-amount <ssdp-amount>] [--cover-mode <mode>] [--auto-reconnect] [--debug] [--fake-http10-content-length] [
+--fake-http-content-length] [--disable-switchback] [--disable-ssdp-listener] [--disable-device-stop] [
+--disable-workarounds] [--disable-mimetype-check] pulseaudio-dlna [--host <host>] [--create-device-config] [
+--update-device-config] [--msearch-port=<msearch-port>] [--ssdp-mx <ssdp-mx>] [--ssdp-ttl <ssdp-ttl>] [--ssdp-amount
+<ssdp-amount>] pulseaudio-dlna [-h | --help | --version]
 
 Options:
     --create-device-config                 Discovers all devices in your network and write a config for them.
-                                           That config can be editied manually to adjust various settings.
+                                           That config can be edited manually to adjust various settings.
                                            You can set:
                                              - Device name
-                                             - Codec order (The first one is used if the encoder binary is available on your system)
+                                             - Codec order (The first one is used if the encoder binary is available on
+                                               your system)
                                              - Various codec settings such as the mime type, specific rules or
                                                the bit rate (depends on the codec)
-                                           A written config is loaded by default if the --encoder and --bit-rate options are not used.
-    --update-device-config                 Same as --create-device-config but preserves your existing config from being overwritten
+                                           A written config is loaded by default if the --encoder and --bit-rate options
+                                           are not used.
+    --update-device-config                 Same as --create-device-config but preserves your existing config from being
+                                           overwritten
        --host=<host>                       Set the server ip.
     -p --port=<port>                       Set the server port [default: 8080].
     -e --encoder=<encoders>                Deprecated alias for --codec
@@ -78,10 +72,13 @@ Options:
                                              - distribution   The icon of your distribution is shown
                                              - application    The audio application's icon is shown
     --debug                                enables detailed debug messages.
-    --auto-reconnect                       If set, the application tries to reconnect devices in case the stream collapsed
+    --auto-reconnect                       If set, the application tries to reconnect devices in case the stream
+                                           collapsed
     --fake-http-content-length             If set, the content-length of HTTP requests will be set to 100 GB.
-    --disable-switchback                   If set, streams won't switched back to the default sink if a device disconnects.
-    --disable-ssdp-listener                If set, the application won't bind to the port 1900 and therefore the automatic discovery of new devices won't work.
+    --disable-switchback                   If set, streams won't switch back to the default sink if a device
+                                           disconnects.
+    --disable-ssdp-listener                If set, the application won't bind to the port 1900 and therefore the
+                                           automatic discovery of new devices won't work.
     --disable-device-stop                  If set, the application won't send any stop commands to renderers at all
     --disable-workarounds                  If set, the application won't apply any device workarounds
     --disable-mimetype-check               If set, the application won't check the device's mime type capabilities
@@ -113,8 +110,7 @@ Examples:
       UDP multicast packages won't work (most times) over VPN connections this is
       very useful if you ever plan to stream to a UPNP device over VPN.
 
-'''
-
+"""
 
 from __future__ import unicode_literals
 
@@ -123,11 +119,11 @@ import os
 import docopt
 import logging
 import socket
-import getpass
 
 
-def main(argv=sys.argv[1:]):
-
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
     import pulseaudio_dlna
     options = docopt.docopt(__doc__, version=pulseaudio_dlna.__version__)
 
@@ -161,14 +157,14 @@ def main(argv=sys.argv[1:]):
 
 
 def acquire_lock():
-    acquire_lock._lock_socket = socket.socket(
-        socket.AF_UNIX, socket.SOCK_DGRAM)
+    acquire_lock._lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
     try:
         name = '/com/masmu/pulseaudio_dlna/{}'.format(getpass.getuser())
         acquire_lock._lock_socket.bind('\0' + name)
         return True
     except socket.error:
         return False
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -25,6 +25,8 @@ import setproctitle
 import signal
 import time
 
+import pulseaudio_dlna
+
 logger = logging.getLogger('pulseaudio_dlna.holder')
 
 
@@ -73,7 +75,7 @@ class Holder(object):
                         break
                 if all_dead:
                     break
-        except:
+        except pulseaudio_dlna:
             traceback.print_exc()
         logger.info('Holder.search()')
 

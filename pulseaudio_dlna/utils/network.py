@@ -31,7 +31,7 @@ def default_ipv4():
     try:
         default_if = netifaces.gateways()['default'][netifaces.AF_INET][1]
         return netifaces.ifaddresses(default_if)[netifaces.AF_INET][0]['addr']
-    except:
+    except netifaces:
         traceback.print_exc()
     return None
 

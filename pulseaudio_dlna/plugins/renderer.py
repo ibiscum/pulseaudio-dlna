@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 
 import re
 import random
-import urlparse
+import urllib.parse
 import urllib
 import functools
 import logging
@@ -29,6 +29,7 @@ import pulseaudio_dlna.pulseaudio
 import pulseaudio_dlna.rules
 import pulseaudio_dlna.streamserver
 import pulseaudio_dlna.utils.network
+import pulseaudio_dlna.codecs
 
 logger = logging.getLogger('pulseaudio_dlna.plugins.renderer')
 
@@ -257,7 +258,7 @@ class BaseRenderer(object):
         raise NotImplementedError()
 
     def add_mime_type(self, mime_type):
-        for identifier, _type in pulseaudio_dlna.codecs.CODECS.iteritems():
+        for identifier, _type in pulseaudio_dlna.codecs.CODECS.items():
             if _type.accepts(mime_type):
                 codec = _type(mime_type)
                 if codec not in self.codecs:
@@ -312,7 +313,7 @@ class BaseRenderer(object):
             codec_type = pulseaudio_dlna.codecs.CODECS[
                 codec_properties['identifier']]
             codec = codec_type(codec_properties['mime_type'])
-            for k, v in codec_properties.iteritems():
+            for k, v in codec_properties.items():
                 forbidden_attributes = ['mime_type', 'identifier', 'rules']
                 if hasattr(codec, k) and k not in forbidden_attributes:
                     setattr(codec, k, v)
@@ -343,7 +344,7 @@ class BaseRenderer(object):
             base_string=urllib.quote(base64.b64encode(data_string)),
             suffix=suffix,
         )
-        return urlparse.urljoin(base_url, stream_name)
+        return urllib.parse.urljoin(base_url, stream_name)
 
     def get_stream_url(self):
         settings = {

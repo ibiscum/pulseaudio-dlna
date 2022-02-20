@@ -40,8 +40,7 @@ logging.basicConfig(
 logger = logging.getLogger('radio')
 
 
-class RadioLauncher():
-
+class RadioLauncher:
     PLUGINS = [
         pulseaudio_dlna.plugins.dlna.DLNAPlugin(),
         pulseaudio_dlna.plugins.chromecast.ChromecastPlugin(),
@@ -52,62 +51,64 @@ class RadioLauncher():
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(
             max_workers=max_workers)
 
-    def stop(self, name, flavour=None):
-        self.thread_pool.submit(self._stop, name, flavour)
+    def stop(self, _name, _flavour=None):
+        self.thread_pool.submit(self._stop, _name, _flavour)
 
-    def _stop(self, name, flavour=None):
-        device = self._get_device(name, flavour)
-        if device:
-            return_code, message = device.stop()
+    def _stop(self, _name, _flavour=None):
+        _device = self._get_device(_name, _flavour)
+        if _device:
+            return_code, message = _device.stop()
             if return_code == 200:
                 logger.info(
                     'The device "{name}" was instructed to stop'.format(
-                        name=device.label))
+                        name=_device.label))
             else:
                 logger.info(
                     'The device "{name}" failed to stop ({code})'.format(
-                        name=device.label, code=return_code))
+                        name=_device.label, code=return_code))
 
-    def play(self, url, name, flavour=None,
+    def play(self, url, _name, _flavour=None,
              artist=None, title=None, thumb=None):
         self.thread_pool.submit(
-            self._play, url, name, flavour, artist, title, thumb)
+            self._play, url, _name, _flavour, artist, title, thumb)
 
-    def _play(self, url, name, flavour=None,
+    def _play(self, url, _name, _flavour=None,
               artist=None, title=None, thumb=None):
         if url.lower().endswith('.m3u'):
             url = self._get_playlist_url(url)
         codec = self._get_codec(url)
-        device = self._get_device(name, flavour)
-        if device:
-            return_code, message = device.play(url, codec, artist, title, thumb)
+        _device = self._get_device(_name, _flavour)
+        if _device:
+            return_code, message = _device.play(url, codec, artist, title, thumb)
             if return_code == 200:
                 logger.info(
                     'The device "{name}" was instructed to play'.format(
-                        name=device.label))
+                        name=_device.label))
             else:
                 logger.info(
                     'The device "{name}" failed to play ({code})'.format(
-                        name=device.label, code=return_code))
+                        name=_device.label, code=return_code))
 
-    def _get_device(self, name, flavour=None):
-        for device in self.devices:
-            if flavour:
-                if device.name == name and device.flavour == flavour:
-                    return device
+    def _get_device(self, _name, _flavour=None):
+        for _device in self.devices:
+            if _flavour:
+                if _device.name == _name and _device.flavour == _flavour:
+                    return _device
             else:
-                if device.name == name:
-                    return device
+                if _device.name == _name:
+                    return _device
         return None
 
-    def _get_codec(self, url):
-        for identifier, _type in pulseaudio_dlna.codecs.CODECS.iteritems():
+    @staticmethod
+    def _get_codec(url):
+        for identifier, _type in pulseaudio_dlna.codecs.CODECS.items():
             codec = _type()
             if url.endswith(codec.suffix):
                 return codec
         return pulseaudio_dlna.codecs.Mp3Codec()
 
-    def _get_playlist_url(self, url):
+    @staticmethod
+    def _get_playlist_url(url):
         response = requests.get(url=url)
         for line in response.content.split('\n'):
             if line.lower().startswith('http://'):
@@ -118,10 +119,11 @@ class RadioLauncher():
         holder = pulseaudio_dlna.holder.Holder(self.PLUGINS)
         holder.search(ttl=5)
         logger.info('Found the following devices:')
-        for udn, device in holder.devices.items():
+        for udn, _device in holder.devices.items():
             logger.info('  - "{name}" ({flavour})'.format(
-                name=device.name, flavour=device.flavour))
+                name=_device.name, flavour=_device.flavour))
         return holder.devices.values()
+
 
 # Local pulseaudio-dlna installations running in a virutalenv should run this
 #   script as module:

@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import logging
-import psutil
+from build.lib.pulseaudio_dlna.utils import psutil
 
 logger = logging.getLogger('pulseaudio_dlna.utils.psutil')
 

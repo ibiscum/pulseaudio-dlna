@@ -22,6 +22,10 @@ import inspect
 import sys
 import logging
 
+# from pulseaudio_dlna.encoders.generic import *
+# from pulseaudio_dlna.encoders.ffmpeg import *
+# from pulseaudio_dlna.encoders.avconv import *
+
 logger = logging.getLogger('pulseaudio_dlna.encoder')
 
 ENCODERS = []
@@ -57,7 +61,7 @@ def set_bit_rate(bit_rate):
 
     for _type in ENCODERS:
         if hasattr(_type, 'DEFAULT_BIT_RATE') and \
-           hasattr(_type, 'SUPPORTED_BIT_RATES'):
+                hasattr(_type, 'SUPPORTED_BIT_RATES'):
             if bit_rate in _type.SUPPORTED_BIT_RATES:
                 _type.DEFAULT_BIT_RATE = bit_rate
 
@@ -74,7 +78,6 @@ def _find_executable(path):
 
 
 class BaseEncoder(object):
-
     AVAILABLE = True
 
     def __init__(self):
@@ -113,13 +116,17 @@ class BaseEncoder(object):
     def __str__(self):
         return '<{} available="{}">'.format(
             self.__class__.__name__,
-            unicode(self.available),
+            self.available,
         )
 
 
 class BitRateMixin(object):
-
     DEFAULT_BIT_RATE = 192
+
+    def __init__(self):
+        self.available = None
+        self._bit_rate = None
+        self.SUPPORTED_BIT_RATES = None
 
     @property
     def bit_rate(self):
@@ -139,12 +146,17 @@ class BitRateMixin(object):
     def __str__(self):
         return '<{} available="{}" bit-rate="{}">'.format(
             self.__class__.__name__,
-            unicode(self.available),
-            unicode(self.bit_rate),
+            self.available,
+            self.bit_rate,
         )
 
 
 class SamplerateChannelMixin(object):
+
+    def __init__(self):
+        self._channels = None
+        self._sample_rate = None
+        self.available = None
 
     @property
     def sample_rate(self):
@@ -165,9 +177,9 @@ class SamplerateChannelMixin(object):
     def __str__(self):
         return '<{} available="{}" sample-rate="{}" channels="{}">'.format(
             self.__class__.__name__,
-            unicode(self.available),
-            unicode(self.sample_rate),
-            unicode(self.channels),
+            self.available,
+            self.sample_rate,
+            self.channels,
         )
 
 
@@ -179,12 +191,8 @@ class NullEncoder(BaseEncoder):
         self._command = []
 
 
-from pulseaudio_dlna.encoders.generic import *
-from pulseaudio_dlna.encoders.ffmpeg import *
-from pulseaudio_dlna.encoders.avconv import *
-
-
 def load_encoders():
+    """Load media encoders."""
     if len(ENCODERS) == 0:
         logger.debug('Loaded encoders:')
         for name, _type in inspect.getmembers(sys.modules[__name__]):
@@ -192,6 +200,6 @@ def load_encoders():
                 if _type is not BaseEncoder:
                     logger.debug('  {}'.format(_type))
                     ENCODERS.append(_type)
-    return None
+
 
 load_encoders()
